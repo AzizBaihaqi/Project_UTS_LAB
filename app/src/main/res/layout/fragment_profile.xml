@@ -1,0 +1,57 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <!-- Avatar -->
+    <ImageView
+        android:id="@+id/avatarImageView"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/circular_image"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Nama Pengguna -->
+    <TextView
+        android:id="@+id/usernameTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nama Pengguna"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_gravity="center"
+        android:paddingTop="8dp" />
+
+    <!-- NIM Pengguna -->
+    <TextView
+        android:id="@+id/nimTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00000000000"
+        android:textSize="16sp"
+        android:layout_gravity="center"
+        android:paddingBottom="16dp" />
+
+    <!-- Tombol Edit Profil -->
+    <Button
+        android:id="@+id/editProfileButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Edit Profile"
+        android:layout_gravity="center"
+        android:layout_marginTop="16dp" />
+
+    <!-- Tombol Sign Out -->
+    <Button
+        android:id="@+id/signOutButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sign Out"
+        android:layout_gravity="center"
+        android:layout_marginTop="16dp" />
+</LinearLayout>

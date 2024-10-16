@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/black">
+
+    <!-- Text Input with Border -->
+    <EditText
+        android:id="@+id/postTextInput"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:hint="Apa cerita anda hari ini..."
+        android:textColorHint="@android:color/white"
+        android:textColor="@android:color/white"
+        android:background="@drawable/edit_text_border"
+        android:gravity="start|top"
+        android:inputType="textMultiLine"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp"
+        android:elevation="4dp" />
+
+    <!-- Icons (Image Upload and Share) inside a container with border -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="@drawable/icon_container_border">
+
+        <!-- Image Upload Icon -->
+        <ImageView
+            android:id="@+id/imageUploadIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/baseline_image_24"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Share Icon -->
+        <ImageView
+            android:id="@+id/shareIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/baseline_upload_24"/>
+    </LinearLayout>
+
+    <!-- ImageView to display the selected image -->
+    <ImageView
+        android:id="@+id/selectedImageView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scaleType="centerCrop"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/white"
+        android:contentDescription="Selected image" />
+</LinearLayout>
+
+
+
+
+

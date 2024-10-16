@@ -1,5 +1,6 @@
 package com.example.project_uts_lab
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
@@ -8,9 +9,6 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import com.google.firebase.auth.FirebaseAuth
 
 class LoginActivity : AppCompatActivity() {
@@ -24,17 +22,6 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-
-        // Enable edge-to-edge display
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = true // Adjust the status bar icons for light/dark background
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
         auth = FirebaseAuth.getInstance()
         loginEmail = findViewById(R.id.login_email)
@@ -50,22 +37,31 @@ class LoginActivity : AppCompatActivity() {
                 if (pass.isNotEmpty()) {
                     auth.signInWithEmailAndPassword(email, pass)
                         .addOnSuccessListener {
-                            Toast.makeText(this@LoginActivity, "Login Successful", Toast.LENGTH_SHORT).show()
+                            // Simpan status login ke SharedPreferences
+                            val sharedPref = getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE)
+                            val editor = sharedPref.edit()
+                            editor.putBoolean("isLoggedIn", true)
+                            editor.putString("userEmail", email)
+                            editor.apply()
+
+                            Toast.makeText(this@LoginActivity, "Login Berhasil", Toast.LENGTH_SHORT).show()
+
+                            // Arahkan ke MainActivity setelah login berhasil
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
                             startActivity(intent)
                             finish() // Tutup LoginActivity
                         }
                         .addOnFailureListener {
-                            Toast.makeText(this@LoginActivity, "Login Failed", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@LoginActivity, "Login Gagal", Toast.LENGTH_SHORT).show()
                         }
 
                 } else {
-                    loginPassword.error = "Password cannot be empty"
+                    loginPassword.error = "Password tidak boleh kosong"
                 }
             } else if (email.isEmpty()) {
-                loginEmail.error = "Email cannot be empty"
+                loginEmail.error = "Email tidak boleh kosong"
             } else {
-                loginEmail.error = "Please Enter Valid Email"
+                loginEmail.error = "Masukkan email yang valid"
             }
         }
 
