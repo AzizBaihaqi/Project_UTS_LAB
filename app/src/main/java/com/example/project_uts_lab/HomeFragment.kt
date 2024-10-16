@@ -28,7 +28,9 @@ class HomeFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        postAdapter = PostAdapter(requireContext(), postList)
+        postAdapter = PostAdapter(requireContext(), postList) { post ->
+            togglePinPost(post) // Ketika pin diklik, jalankan logika di sini
+        }
         recyclerView.adapter = postAdapter
 
         fetchPosts()
@@ -36,59 +38,86 @@ class HomeFragment : Fragment() {
         return view
     }
 
-    // Fetch posts and listen for user profile changes
     private fun fetchPosts() {
-        val currentUser = auth.currentUser
-        currentUser?.let {
-            // Get current user ID
-            val userId = it.uid
-            firestore.collection("posts")
-                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener { documents ->
-                    postList.clear()
-                    for (document in documents) {
-                        val imageUrl = document.getString("imageUrl")
-                        val text = document.getString("text") ?: ""
-                        val userName = document.getString("userName") ?: "Unknown User"
-                        val avatarUrl = document.getString("avatarUrl")
+        val currentUser = auth.currentUser?.uid ?: return  // Dapatkan user ID
 
-                        // Add posts to the post list
-                        postList.add(Post(imageUrl, text, userName, avatarUrl))
-                    }
-                    postAdapter.notifyDataSetChanged()
+        firestore.collection("posts")
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { postDocuments ->
+                postList.clear()
+                for (postDocument in postDocuments) {
+                    val postId = postDocument.id
+                    val imageUrl = postDocument.getString("imageUrl")
+                    val text = postDocument.getString("text") ?: ""
+                    val userName = postDocument.getString("userName") ?: "Unknown User"
+                    val avatarUrl = postDocument.getString("avatarUrl")
+                    val likeCount = postDocument.getLong("likeCount")?.toInt() ?: 0
+                    val likedBy = postDocument.get("likedBy") as? List<String> ?: emptyList<String>()
+                    val timestamp = postDocument.getTimestamp("timestamp")?.toDate()?.time ?: System.currentTimeMillis()
+
+                    // Cek apakah postingan sudah di-pin oleh user saat ini
+                    firestore.collection("pinnedPosts")
+                        .whereEqualTo("userId", currentUser)
+                        .whereEqualTo("postId", postId)
+                        .get()
+                        .addOnSuccessListener { pinDocuments ->
+                            val isPinned = !pinDocuments.isEmpty()
+
+                            // Buat objek Post dan tambahkan ke list
+                            postList.add(Post(imageUrl, text, userName, avatarUrl, isPinned, timestamp, likedBy.contains(currentUser), likeCount, postId))
+
+                            // Sort pinned posts first, then by descending timestamp
+                            postList.sortWith(
+                                compareByDescending<Post> { it.isPinned }
+                                    .thenByDescending { it.timestamp }
+                            )
+
+                            postAdapter.notifyDataSetChanged()
+                        }
                 }
-                .addOnFailureListener { exception ->
-                    Log.e("HomeFragment", "Error getting posts: ${exception.message}")
-                }
-
-            // Listen to changes in user profile (e.g. avatar or name updates)
-            firestore.collection("users").document(userId)
-                .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.w("HomeFragment", "Listen failed.", e)
-                        return@addSnapshotListener
-                    }
-
-                    if (snapshot != null && snapshot.exists()) {
-                        val updatedUserName = snapshot.getString("name") ?: "Unknown User"
-                        val updatedAvatarUrl = snapshot.getString("avatarUrl")
-
-                        // Update the user's posts in real-time
-                        updatePostsWithNewProfileData(updatedUserName, updatedAvatarUrl)
-                    }
-                }
-        }
+            }
+            .addOnFailureListener { e ->
+                Log.e("HomeFragment", "Error fetching posts: ${e.message}")
+            }
     }
 
-    // Update posts with new user name and avatar
-    private fun updatePostsWithNewProfileData(newUserName: String, newAvatarUrl: String?) {
-        postList.forEach { post ->
-            if (post.userName == auth.currentUser?.displayName) {
-                post.userName = newUserName
-                post.avatarUrl = newAvatarUrl
+    // Tambahkan fungsi togglePinPost di sini
+    private fun togglePinPost(post: Post) {
+        val currentUser = auth.currentUser?.uid ?: return  // Pastikan pengguna sudah login
+        val pinRef = firestore.collection("pinnedPosts")
+            .whereEqualTo("userId", currentUser)
+            .whereEqualTo("postId", post.postId)
+
+        pinRef.get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    // Post sudah di-pin oleh user ini, maka lakukan unpin
+                    for (document in documents) {
+                        firestore.collection("pinnedPosts").document(document.id).delete()
+                    }
+                    post.isPinned = false
+                } else {
+                    // Post belum di-pin, maka lakukan pin
+                    val pinData = hashMapOf(
+                        "userId" to currentUser,
+                        "postId" to post.postId
+                    )
+                    firestore.collection("pinnedPosts").add(pinData)
+                    post.isPinned = true
+                }
+
+                // Lakukan sort ulang setelah pin/unpin
+                postList.sortWith(
+                    compareByDescending<Post> { it.isPinned } // Sort pinned posts first
+                        .thenByDescending { it.timestamp }   // Then sort by timestamp for unpinned posts
+                )
+                postAdapter.notifyDataSetChanged()
             }
-        }
-        postAdapter.notifyDataSetChanged() // Refresh the RecyclerView
+            .addOnFailureListener { e ->
+                Log.e("PinPost", "Error handling pin/unpin: ${e.message}")
+            }
     }
 }
+
+

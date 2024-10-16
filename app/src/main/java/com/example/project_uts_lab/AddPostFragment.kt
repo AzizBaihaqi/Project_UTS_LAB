@@ -110,9 +110,9 @@ class AddPostFragment : Fragment() {
                     val postMap = hashMapOf(
                         "text" to postText,
                         "imageUrl" to imageUrl,
-                        "userName" to userName, // Simpan nama pengguna
-                        "avatarUrl" to avatarUrl, // Simpan URL avatar pengguna
-                        "timestamp" to System.currentTimeMillis()
+                        "userName" to userName,  // Simpan nama pengguna
+                        "avatarUrl" to avatarUrl,  // Simpan URL avatar pengguna
+                        "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp()  // Gunakan timestamp dari server
                     )
 
                     // Simpan postingan ke koleksi 'posts'
@@ -133,4 +133,5 @@ class AddPostFragment : Fragment() {
                 }
         }
     }
+
 }
