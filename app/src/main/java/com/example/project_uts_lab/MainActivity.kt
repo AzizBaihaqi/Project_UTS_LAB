@@ -1,5 +1,6 @@
 package com.example.project_uts_lab
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -19,50 +20,57 @@ class MainActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
-        // Cek apakah pengguna sudah login
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            // Pengguna sudah login
-            Log.d("MainActivity", "Pengguna sudah login: ${currentUser.email}")
+        // Check login status
+        val sharedPref = getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE)
+        val isLoggedIn = sharedPref.getBoolean("isLoggedIn", false)
 
-            // Inisialisasi BottomNavigationView
-            bottomNavigationView = findViewById(R.id.bottom_navigation)
-
-            // Muat HomeFragment jika belum ada fragment yang dimuat
-            if (savedInstanceState == null) {
-                loadFragment(HomeFragment())
-                // Set tombol Home sebagai aktif
-                bottomNavigationView.selectedItemId = R.id.nav_home
-            }
-
-            // Set listener untuk BottomNavigationView
-            bottomNavigationView.setOnItemSelectedListener { item ->
-                when (item.itemId) {
-                    R.id.nav_home -> {
-                        loadFragment(HomeFragment())
-                        true
-                    }
-                    R.id.nav_profile -> {
-                        loadFragment(ProfileFragment())
-                        true
-                    }
-                    R.id.nav_add -> {
-                        loadFragment(AddPostFragment())
-                        true
-                    }
-                    else -> false
-                }
-            }
-        } else {
-            // Pengguna belum login, arahkan ke LoginActivity
-            Log.d("MainActivity", "Pengguna belum login")
+        if (!isLoggedIn) {
+            // If not logged in, go to LoginActivity
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
-            finish() // Tutup MainActivity setelah login
+            finish() // Close MainActivity
+        } else {
+            // If logged in, load the fragments
+            val currentUser = auth.currentUser
+            if (currentUser != null) {
+                Log.d("MainActivity", "User is logged in: ${currentUser.email}")
+
+                // Initialize BottomNavigationView
+                bottomNavigationView = findViewById(R.id.bottom_navigation)
+
+                // Load HomeFragment if no fragment is loaded
+                if (savedInstanceState == null) {
+                    loadFragment(HomeFragment())
+                    bottomNavigationView.selectedItemId = R.id.nav_home // Set Home as active
+                }
+
+                // Set listener for BottomNavigationView
+                bottomNavigationView.setOnItemSelectedListener { item ->
+                    when (item.itemId) {
+                        R.id.nav_home -> {
+                            loadFragment(HomeFragment())
+                            true
+                        }
+                        R.id.nav_profile -> {
+                            loadFragment(ProfileFragment())
+                            true
+                        }
+                        R.id.nav_add -> {
+                            loadFragment(AddPostFragment())
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            } else {
+                // If no user is logged in, redirect to LoginActivity
+                val intent = Intent(this, LoginActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
         }
     }
 
-    // Fungsi untuk memuat fragment
     private fun loadFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)

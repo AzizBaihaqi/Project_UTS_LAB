@@ -23,6 +23,17 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
+        // Check if the user is already logged in
+        val sharedPref = getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE)
+        val isLoggedIn = sharedPref.getBoolean("isLoggedIn", false)
+
+        if (isLoggedIn) {
+            // If logged in, redirect to MainActivity
+            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
+
         auth = FirebaseAuth.getInstance()
         loginEmail = findViewById(R.id.login_email)
         loginPassword = findViewById(R.id.login_password)
@@ -37,31 +48,28 @@ class LoginActivity : AppCompatActivity() {
                 if (pass.isNotEmpty()) {
                     auth.signInWithEmailAndPassword(email, pass)
                         .addOnSuccessListener {
-                            // Simpan status login ke SharedPreferences
-                            val sharedPref = getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE)
+                            // Save login status in SharedPreferences
                             val editor = sharedPref.edit()
                             editor.putBoolean("isLoggedIn", true)
                             editor.putString("userEmail", email)
                             editor.apply()
 
-                            Toast.makeText(this@LoginActivity, "Login Berhasil", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@LoginActivity, "Login Successful", Toast.LENGTH_SHORT).show()
 
-                            // Arahkan ke MainActivity setelah login berhasil
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
                             startActivity(intent)
-                            finish() // Tutup LoginActivity
+                            finish() // Close LoginActivity
                         }
                         .addOnFailureListener {
-                            Toast.makeText(this@LoginActivity, "Login Gagal", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@LoginActivity, "Login Failed", Toast.LENGTH_SHORT).show()
                         }
-
                 } else {
-                    loginPassword.error = "Password tidak boleh kosong"
+                    loginPassword.error = "Password cannot be empty"
                 }
             } else if (email.isEmpty()) {
-                loginEmail.error = "Email tidak boleh kosong"
+                loginEmail.error = "Email cannot be empty"
             } else {
-                loginEmail.error = "Masukkan email yang valid"
+                loginEmail.error = "Please enter a valid email"
             }
         }
 

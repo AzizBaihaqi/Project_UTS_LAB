@@ -1,5 +1,6 @@
 package com.example.project_uts_lab
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -47,9 +48,18 @@ class ProfileFragment : Fragment() {
         // Fungsi untuk Sign Out
         signOutButton.setOnClickListener {
             FirebaseAuth.getInstance().signOut()
+
+            // Clear SharedPreferences (hapus session login yang tersimpan)
+            val sharedPref = requireActivity().getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE)
+            val editor = sharedPref.edit()
+            editor.clear() // Hapus semua data login
+            editor.apply()
+
+            // Buka LoginActivity setelah sign-out
             val intent = Intent(requireContext(), LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Hapus back stack
             startActivity(intent)
-            activity?.finish() // Tutup ProfileFragment setelah logout
+            activity?.finish() // Tutup ProfileFragment atau MainActivity
         }
 
         // Fungsi untuk Edit Profile
@@ -60,6 +70,7 @@ class ProfileFragment : Fragment() {
 
         return view
     }
+
     override fun onResume() {
         super.onResume()
         // Fetch user data when fragment resumes
