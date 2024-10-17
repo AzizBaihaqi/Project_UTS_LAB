@@ -1,6 +1,5 @@
 package com.example.project_uts_lab
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -60,12 +59,8 @@ class SignUpActivity : AppCompatActivity() {
                 else -> {
                     auth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            // Automatically log in the user, store the login session and redirect to MainActivity
-                            saveLoginSession(email) // Save login session to SharedPreferences
                             Toast.makeText(this@SignUpActivity, "Signup Successful", Toast.LENGTH_SHORT).show()
-                            val intent = Intent(this@SignUpActivity, MainActivity::class.java)
-                            startActivity(intent)
-                            finish() // Close the signup activity
+                            startActivity(Intent(this@SignUpActivity, LoginActivity::class.java))
                         } else {
                             Toast.makeText(this@SignUpActivity, "Signup Failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                         }
@@ -77,14 +72,5 @@ class SignUpActivity : AppCompatActivity() {
         loginRedirectText.setOnClickListener {
             startActivity(Intent(this@SignUpActivity, LoginActivity::class.java))
         }
-    }
-
-    // Function to save login session
-    private fun saveLoginSession(email: String) {
-        val sharedPref = getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-        editor.putBoolean("isLoggedIn", true)
-        editor.putString("userEmail", email)
-        editor.apply()
     }
 }

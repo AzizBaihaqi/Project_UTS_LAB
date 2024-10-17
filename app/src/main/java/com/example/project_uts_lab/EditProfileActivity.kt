@@ -27,7 +27,7 @@ class EditProfileActivity : AppCompatActivity() {
     private val auth = FirebaseAuth.getInstance()
 
     private var oldUserName: String? = null
-    private var oldAvatarUrl: String? = null
+    private var oldAvatarUrl: String? = null  // Menyimpan avatar lama
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +68,7 @@ class EditProfileActivity : AppCompatActivity() {
                         val avatarUrl = document.getString("avatarUrl") ?: ""
 
                         oldUserName = userName
-                        oldAvatarUrl = avatarUrl
+                        oldAvatarUrl = avatarUrl // Simpan avatar lama
 
                         nameInput.setText(userName)
                         nimInput.setText(nim)
@@ -97,14 +97,14 @@ class EditProfileActivity : AppCompatActivity() {
             return
         }
 
-        if (user != null && (name.isNotEmpty() || selectedImageUri != null)) {
+        if (user != null && name.isNotEmpty()) {
             val userData = hashMapOf(
                 "name" to name,
                 "nim" to nim
             )
 
+            // Jika avatar baru dipilih, upload dan perbarui URL avatar
             if (selectedImageUri != null) {
-                // Upload avatar ke Firebase Storage
                 val avatarRef = storageReference.child("avatars/${user.uid}.jpg")
                 avatarRef.putFile(selectedImageUri!!)
                     .addOnSuccessListener {
@@ -112,6 +112,7 @@ class EditProfileActivity : AppCompatActivity() {
                             val avatarUrl = uri.toString()
                             userData["avatarUrl"] = avatarUrl
 
+                            // Simpan profil dengan avatar baru
                             updateUserProfile(user.uid, userData, name, avatarUrl)
                         }
                     }
@@ -119,13 +120,25 @@ class EditProfileActivity : AppCompatActivity() {
                         Toast.makeText(this, "Gagal mengunggah avatar: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
             } else {
-                // Simpan nama dan NIM saja jika avatar tidak diubah
-                updateUserProfile(user.uid, userData, name, oldAvatarUrl!!)
+                // Jika tidak ada avatar baru yang dipilih, gunakan avatar lama
+                firestore.collection("users").document(user.uid).get()
+                    .addOnSuccessListener { document ->
+                        val oldAvatarUrl = document.getString("avatarUrl") ?: ""
+
+                        userData["avatarUrl"] = oldAvatarUrl  // Tetapkan avatar lama
+
+                        // Simpan profil dengan avatar lama
+                        updateUserProfile(user.uid, userData, name, oldAvatarUrl)
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Gagal memuat avatar lama: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
             }
         } else {
             Toast.makeText(this, "Nama dan NIM harus diisi", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     private fun updateUserProfile(userId: String, userData: HashMap<String, String>, newUserName: String, newAvatarUrl: String) {
         firestore.collection("users").document(userId)

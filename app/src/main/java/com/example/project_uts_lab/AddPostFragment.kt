@@ -10,6 +10,8 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,12 +24,14 @@ class AddPostFragment : Fragment() {
     private lateinit var postTextInput: EditText
     private lateinit var shareButton: ImageView
     private lateinit var imageUploadIcon: ImageView
-    private val PICK_IMAGE_REQUEST = 1
     private var imageUri: Uri? = null
 
     private val storageReference = FirebaseStorage.getInstance().reference
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance() // Tambahkan autentikasi Firebase
+
+    // Replacing deprecated method
+    private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,12 +44,23 @@ class AddPostFragment : Fragment() {
         shareButton = view.findViewById(R.id.shareIcon)
         imageUploadIcon = view.findViewById(R.id.imageUploadIcon)
 
+        // Initialize ActivityResultLauncher for picking images
+        imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data
+                if (data != null && data.data != null) {
+                    imageUri = data.data
+                    selectedImageView.setImageURI(imageUri)
+                }
+            }
+        }
+
         imageUploadIcon.setOnClickListener {
             openGallery()
         }
 
         shareButton.setOnClickListener {
-            uploadPost()
+            checkUserProfileAndUploadPost()  // Pengecekan sebelum posting
         }
 
         return view
@@ -54,14 +69,28 @@ class AddPostFragment : Fragment() {
     private fun openGallery() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
-        startActivityForResult(intent, PICK_IMAGE_REQUEST)
+        imagePickerLauncher.launch(intent)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
-            imageUri = data.data
-            selectedImageView.setImageURI(imageUri)
+    // Fungsi untuk mengecek apakah nama dan NIM sudah di-set
+    private fun checkUserProfileAndUploadPost() {
+        val user = auth.currentUser
+        if (user != null) {
+            firestore.collection("users").document(user.uid).get()
+                .addOnSuccessListener { document ->
+                    val name = document.getString("name")
+                    val nim = document.getString("nim")
+
+                    // Cek apakah nama dan NIM kosong
+                    if (name.isNullOrEmpty() || nim.isNullOrEmpty()) {
+                        Toast.makeText(context, "Anda harus mengatur Nama dan NIM sebelum memposting.", Toast.LENGTH_LONG).show()
+                    } else {
+                        uploadPost()  // Lanjutkan proses upload jika nama dan NIM sudah diisi
+                    }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(context, "Gagal memeriksa profil pengguna.", Toast.LENGTH_SHORT).show()
+                }
         }
     }
 
@@ -93,7 +122,6 @@ class AddPostFragment : Fragment() {
             savePostData(null)
         }
     }
-
 
     private fun savePostData(imageUrl: String?) {
         val postText = postTextInput.text.toString()
@@ -133,5 +161,4 @@ class AddPostFragment : Fragment() {
                 }
         }
     }
-
 }

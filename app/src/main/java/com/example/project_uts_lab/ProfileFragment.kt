@@ -49,17 +49,16 @@ class ProfileFragment : Fragment() {
         signOutButton.setOnClickListener {
             FirebaseAuth.getInstance().signOut()
 
-            // Clear SharedPreferences (hapus session login yang tersimpan)
+            // Clear SharedPreferences untuk menghapus status login
             val sharedPref = requireActivity().getSharedPreferences("LoginPrefs", Context.MODE_PRIVATE)
             val editor = sharedPref.edit()
-            editor.clear() // Hapus semua data login
+            editor.clear()
             editor.apply()
 
-            // Buka LoginActivity setelah sign-out
+            // Pindah ke LoginActivity
             val intent = Intent(requireContext(), LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Hapus back stack
             startActivity(intent)
-            activity?.finish() // Tutup ProfileFragment atau MainActivity
+            activity?.finish() // Tutup ProfileFragment setelah logout
         }
 
         // Fungsi untuk Edit Profile
@@ -95,7 +94,7 @@ class ProfileFragment : Fragment() {
                         nimTextView.text = nim ?: "NIM tidak ditemukan"
 
                         // Jika ada URL avatar, muat gambar menggunakan Glide dengan CircleCrop
-                        if (avatarUrl != null) {
+                        if (!avatarUrl.isNullOrEmpty()) {
                             Glide.with(this)
                                 .load(avatarUrl)
                                 .transform(CircleCrop()) // Membuat gambar berbentuk lingkaran
